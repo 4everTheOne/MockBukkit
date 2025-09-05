@@ -54,7 +54,7 @@ public final class ItemStackMirror extends ItemStack
 	 * @return The mirror item.
 	 */
 	@NotNull
-	public static ItemStack create(@NonNull ItemStack item)
+	public static ItemStackMirror create(@NonNull ItemStack item)
 	{
 		Preconditions.checkArgument(item != null, "item cannot be null");
 

@@ -43,6 +43,7 @@ import org.mockbukkit.mockbukkit.MockBukkitExtension;
 import org.mockbukkit.mockbukkit.MockBukkitInject;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.exception.UnimplementedOperationException;
+import org.mockbukkit.mockbukkit.inventory.ItemStackMirror;
 import org.mockbukkit.mockbukkit.inventory.ItemStackMock;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -155,8 +156,32 @@ class UnsafeValuesTest
 
 	@ParameterizedTest
 	@MethodSource("provideTestItems")
+	void serializeItemMirror(ItemStack input)
+	{
+		ItemStackMirror expected = ItemStackMirror.create(input);
+		populateItemMeta(expected);
+		byte[] serialized = unsafeValuesMock.serializeItem(expected);
+		ItemStack actual = unsafeValuesMock.deserializeItem(serialized);
+		assertEquals(expected, actual);
+		assertEquals(expected.getItemMeta(), actual.getItemMeta());
+	}
+
+	@ParameterizedTest
+	@MethodSource("provideTestItems")
 	void serializeItemAsJson(ItemStack expected)
 	{
+		populateItemMeta(expected);
+		@NotNull JsonObject serialized = unsafeValuesMock.serializeItemAsJson(expected);
+		ItemStack actual = unsafeValuesMock.deserializeItemFromJson(serialized);
+		assertEquals(expected, actual);
+		assertEquals(expected.getItemMeta(), actual.getItemMeta());
+	}
+
+	@ParameterizedTest
+	@MethodSource("provideTestItems")
+	void serializeItemMirrorAsJson(ItemStack input)
+	{
+		ItemStackMirror expected = ItemStackMirror.create(input);
 		populateItemMeta(expected);
 		@NotNull JsonObject serialized = unsafeValuesMock.serializeItemAsJson(expected);
 		ItemStack actual = unsafeValuesMock.deserializeItemFromJson(serialized);
