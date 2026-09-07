@@ -49,26 +49,25 @@ jobs:
         if: ${{ steps.release-label.outputs.level != null }}
         id: get-latest-tag
         run: |
-          # 1. Try finding the latest tag with PREFIX on the current branch
-          LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}*" | head -n 1)
+          # 1. Try finding the latest tag with PREFIX on the current branch (e.g., v26.2-v4.116.3)
+          LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}-v*" | head -n 1)
 
-          # 2. Fallback: Find exact 'vMajor.Minor.Patch' tag on this branch and reformat to PREFIX-vX.Y.Z
+          # 2. Fallback: Match exact 'vX.Y.Z' (e.g. v4.116.3) on this branch and convert to PREFIX-vX.Y.Z
           if [ -z "$LATEST_TAG" ]; then
-            echo "No prefix tag found on this branch. Searching for exact vX.Y.Z tag on branch..."
+            echo "No prefix tag found on this branch. Searching for exact vX.Y.Z tag..."
 
-            # Strict regex for vMajor.Minor.Patch (e.g. v1.2.3, ignores pre-releases like -rc1)
+            # Matches tags like v4.116.3 (ignores pre-releases like -rc1 or custom prefixes)
             RAW_TAG=$(git tag -l --merged HEAD --sort=-v:refname "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
 
             if [ -n "$RAW_TAG" ]; then
-              # Reformat "v1.2.3" -> "v26.2-v1.2.3"
               LATEST_TAG="${TAG_PREFIX}-${RAW_TAG}"
             fi
           fi
 
-          # 3. Default Fallback: If no valid tags exist on this branch at all
+          # 3. Default Fallback: If no tags exist on this branch at all
           if [ -z "$LATEST_TAG" ]; then
-          echo "No valid tags found on this branch. Using default fallback..."
-          LATEST_TAG="${TAG_PREFIX}-v0.0.0"
+            echo "No valid tags found on this branch. Using default fallback..."
+            LATEST_TAG="${TAG_PREFIX}-v0.0.0"
           fi
 
           echo "Found tag $LATEST_TAG"
