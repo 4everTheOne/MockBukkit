@@ -28,5 +28,20 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
+      - name: Get latest tag
+        if: ${{ steps.release-label.outputs.level != null }}
+        id: get-latest-tag
+        run: |
+          # Sorts all tags by semver descending and picks the top one
+          LATEST_TAG=$(git tag -l --sort=-version:refname "$TAG_PREFIX-*" | head -n 1)
+
+          # Fallback if no tags exist yet
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="$TAG_PREFIX-v0.0.0"
+          fi
+
+          echo "Found tag $LATEST_TAG"
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
       - name: Compile and assemble
         run: ./gradlew assemble testClasses --refresh-dependencies
