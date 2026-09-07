@@ -20,7 +20,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 15
     env:
-      TAG_PREFIX: "v26.2"
+      TAG_PREFIX: "MC26.2"
     permissions:
       contents: write
       pull-requests: read
@@ -71,7 +71,7 @@ jobs:
             LATEST_TAG="${TAG_PREFIX}-v0.0.0"
           fi
 
-          # 4. Extract clean SemVer (e.g., "v26.2-v4.116.1" -> "4.116.1")
+          # 4. Extract clean SemVer (e.g., "MC26.2-v4.116.1" -> "4.116.1")
           CLEAN_VERSION=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
 
           echo "Found tag $LATEST_TAG (version: $CLEAN_VERSION)"
