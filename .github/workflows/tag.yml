@@ -95,10 +95,6 @@ jobs:
         id: paper-version
         if: ${{ steps.release-label.outputs.level != null }}
         run: |
-          # grep keeps only the "Paper ...:" lines: the gradle wrapper writes its
-          # "Downloading ...10%...100%" distribution-bootstrap progress to stdout on a
-          # cold runner, which would otherwise land in the release tag message. Filtering
-          # by line content strips it regardless of stream. (No 2>&1 — keep stderr out too.)
           {
               echo "paper_details<<PAPER_DETAILS_EOF"
               ./gradlew printPaperDetails --quiet --console=plain | grep '^Paper'
@@ -122,7 +118,7 @@ jobs:
           # Clean raw version (e.g., "4.116.2")
           CLEAN_VER="${NEW_VERSION#v}"
 
-          # Full tag with prefix (e.g., "v26.2-v4.116.2")
+          # Full tag with prefix (e.g., "MC26.2-v4.116.2")
           FULL_TAG="${TAG_PREFIX}-v${CLEAN_VER}"
 
           echo "full_tag=$FULL_TAG" >> "$GITHUB_OUTPUT"
