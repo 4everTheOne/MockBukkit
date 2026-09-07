@@ -29,7 +29,6 @@ jobs:
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: Get latest tag
-        if: ${{ steps.release-label.outputs.level != null }}
         id: get-latest-tag
         run: |
           # Sorts all tags by semver descending and picks the top one
