@@ -37,17 +37,17 @@ jobs:
       - name: Get latest tag
         id: get-latest-tag
         run: |
-          # 1. Try finding the latest tag with PREFIX on the current branch (e.g., v26.2-v4.116.3)
-          LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}-v*" | head -n 1)
+          # 1. Try finding the latest tag with TAG_PREFIX on the current branch (e.g., v26.2-v4.116.3)
+          LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}*" | head -n 1)
 
-          # 2. Fallback: Match exact 'vX.Y.Z' (e.g. v4.116.3) on this branch and convert to PREFIX-vX.Y.Z
+          # 2. Fallback: Match exact 'vX.Y.Z' (e.g. v4.116.3) on this branch and convert to TAG_PREFIX-vX.Y.Z
           if [ -z "$LATEST_TAG" ]; then
             echo "No prefix tag found on this branch. Searching for exact vX.Y.Z tag..."
 
-            # Matches tags like v4.116.3 (ignores pre-releases like -rc1 or custom prefixes)
-            RAW_TAG=$(git tag -l --merged HEAD --sort=-v:refname "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+            RAW_TAG=$(git tag -l --merged HEAD --sort=-v:refname "v*" | grep -m 1 -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
 
             if [ -n "$RAW_TAG" ]; then
+              # Converts "v4.116.1" -> "v26.2-v4.116.1"
               LATEST_TAG="${TAG_PREFIX}-${RAW_TAG}"
             fi
           fi
