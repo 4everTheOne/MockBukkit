@@ -37,29 +37,63 @@ jobs:
       - name: Get latest tag
         id: get-latest-tag
         run: |
-          # 1. Try finding the latest tag with TAG_PREFIX on the current branch (e.g., v26.2-v4.116.3)
+          # 1. Try finding the latest tag with TAG_PREFIX on the current branch
           LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}*" | head -n 1)
 
-          # 2. Fallback: Match exact 'vX.Y.Z' (e.g. v4.116.3) on this branch and convert to TAG_PREFIX-vX.Y.Z
+          # 2. Fallback: Match exact 'vX.Y.Z' and convert to TAG_PREFIX-vX.Y.Z
           if [ -z "$LATEST_TAG" ]; then
             echo "No prefix tag found on this branch. Searching for exact vX.Y.Z tag..."
 
             RAW_TAG=$(git tag -l --merged HEAD --sort=-v:refname "v*" | grep -m 1 -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
 
             if [ -n "$RAW_TAG" ]; then
-              # Converts "v4.116.1" -> "v26.2-v4.116.1"
               LATEST_TAG="${TAG_PREFIX}-${RAW_TAG}"
             fi
           fi
 
-          # 3. Default Fallback: If no tags exist on this branch at all
+          # 3. Default Fallback if no tags exist at all
           if [ -z "$LATEST_TAG" ]; then
             echo "No valid tags found on this branch. Using default fallback..."
             LATEST_TAG="${TAG_PREFIX}-v0.0.0"
           fi
 
-          echo "Found tag $LATEST_TAG"
+          # 4. Extract clean SemVer (e.g., "v26.2-v4.116.1" -> "4.116.1")
+          CLEAN_VERSION=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
+
+          echo "Found tag $LATEST_TAG (version: $CLEAN_VERSION)"
+
+          # Export both outputs
           echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version (Dry Run)
+        uses: actions-ecosystem/action-bump-semver@34e334551143a5301f38c830e44a22273c6ff5c5 # v1.0.0
+        id: bump-semver
+        with:
+          current_version: ${{ steps.get-latest-tag.outputs.version }}
+          level: patch # Hardcoded for testing
+
+      - name: Format and preview version
+        env:
+          NEW_VERSION: ${{ steps.bump-semver.outputs.new_version }}
+          CURRENT_TAG: ${{ steps.get-latest-tag.outputs.tag }}
+        run: |
+          CLEAN_VER="${NEW_VERSION#v}"
+          FULL_TAG="${TAG_PREFIX}-v${CLEAN_VER}"
+
+          echo "=== DRY RUN RELEASE SUMMARY ==="
+          echo "Release Level : patch"
+          echo "Current Tag   : $CURRENT_TAG"
+          echo "Next Tag      : $FULL_TAG"
+          echo "Publish Ver   : $CLEAN_VER"
+
+          {
+            echo "### 🏷️ Tag Bump Preview"
+            echo "- **Release Label Level:** \`patch\`"
+            echo "- **Current Tag:** \`$CURRENT_TAG\`"
+            echo "- **Calculated Next Tag:** \`$FULL_TAG\`"
+            echo "- **Publish Version:** \`$CLEAN_VER\`"
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: Compile and assemble
         run: ./gradlew assemble testClasses --refresh-dependencies
