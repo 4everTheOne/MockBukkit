@@ -16,14 +16,8 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 20
 
-    env:
-      TAG_PREFIX: "MC26.2"
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0  # Fetches full commit history (required for --merged HEAD)
-          fetch-tags: true # Ensures all remote tags are downloaded
 
       - name: Set up JDK 25
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
@@ -33,67 +27,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-
-      - name: Get latest tag
-        id: get-latest-tag
-        run: |
-          # 1. Try finding the latest tag with TAG_PREFIX on the current branch
-          LATEST_TAG=$(git tag -l --merged HEAD --sort=-v:refname "${TAG_PREFIX}*" | head -n 1)
-
-          # 2. Fallback: Match exact 'vX.Y.Z' and convert to TAG_PREFIX-vX.Y.Z
-          if [ -z "$LATEST_TAG" ]; then
-            echo "No prefix tag found on this branch. Searching for exact vX.Y.Z tag..."
-
-            RAW_TAG=$(git tag -l --merged HEAD --sort=-v:refname "v*" | grep -m 1 -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
-
-            if [ -n "$RAW_TAG" ]; then
-              LATEST_TAG="${TAG_PREFIX}-${RAW_TAG}"
-            fi
-          fi
-
-          # 3. Default Fallback if no tags exist at all
-          if [ -z "$LATEST_TAG" ]; then
-            echo "No valid tags found on this branch. Using default fallback..."
-            LATEST_TAG="${TAG_PREFIX}-v0.0.0"
-          fi
-
-          # 4. Extract clean SemVer (e.g., "MC26.2-v4.116.1" -> "4.116.1")
-          CLEAN_VERSION=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
-
-          echo "Found tag $LATEST_TAG (version: $CLEAN_VERSION)"
-
-          # Export both outputs
-          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Bump version (Dry Run)
-        uses: actions-ecosystem/action-bump-semver@34e334551143a5301f38c830e44a22273c6ff5c5 # v1.0.0
-        id: bump-semver
-        with:
-          current_version: ${{ steps.get-latest-tag.outputs.version }}
-          level: minor # Hardcoded for testing
-
-      - name: Format and preview version
-        env:
-          NEW_VERSION: ${{ steps.bump-semver.outputs.new_version }}
-          CURRENT_TAG: ${{ steps.get-latest-tag.outputs.tag }}
-        run: |
-          CLEAN_VER="${NEW_VERSION#v}"
-          FULL_TAG="${TAG_PREFIX}-v${CLEAN_VER}"
-
-          echo "=== DRY RUN RELEASE SUMMARY ==="
-          echo "Release Level : minor"
-          echo "Current Tag   : $CURRENT_TAG"
-          echo "Next Tag      : $FULL_TAG"
-          echo "Publish Ver   : $CLEAN_VER"
-
-          {
-            echo "### 🏷️ Tag Bump Preview"
-            echo "- **Release Label Level:** \`patch\`"
-            echo "- **Current Tag:** \`$CURRENT_TAG\`"
-            echo "- **Calculated Next Tag:** \`$FULL_TAG\`"
-            echo "- **Publish Version:** \`$CLEAN_VER\`"
-          } >> $GITHUB_STEP_SUMMARY
 
       - name: Compile and assemble
         run: ./gradlew assemble testClasses --refresh-dependencies
