@@ -95,6 +95,10 @@ jobs:
         id: paper-version
         if: ${{ steps.release-label.outputs.level != null }}
         run: |
+          # grep keeps only the "Paper ...:" lines: the gradle wrapper writes its
+          # "Downloading ...10%...100%" distribution-bootstrap progress to stdout on a
+          # cold runner, which would otherwise land in the release tag message. Filtering
+          # by line content strips it regardless of stream. (No 2>&1 — keep stderr out too.)
           {
               echo "paper_details<<PAPER_DETAILS_EOF"
               ./gradlew printPaperDetails --quiet --console=plain | grep '^Paper'
