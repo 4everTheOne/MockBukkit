@@ -71,7 +71,7 @@ jobs:
         id: bump-semver
         with:
           current_version: ${{ steps.get-latest-tag.outputs.version }}
-          level: patch # Hardcoded for testing
+          level: minor # Hardcoded for testing
 
       - name: Format and preview version
         env:
@@ -82,7 +82,7 @@ jobs:
           FULL_TAG="${TAG_PREFIX}-v${CLEAN_VER}"
 
           echo "=== DRY RUN RELEASE SUMMARY ==="
-          echo "Release Level : patch"
+          echo "Release Level : minor"
           echo "Current Tag   : $CURRENT_TAG"
           echo "Next Tag      : $FULL_TAG"
           echo "Publish Ver   : $CLEAN_VER"
